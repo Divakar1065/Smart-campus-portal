@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS - Academic Tracking System | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f5f7fb;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            width: 100%;
+            max-width: 440px;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-header i {
+            color: #4f46e5;
+            font-size: 42px;
+            margin-bottom: 12px;
+        }
+        .login-header h2 {
+            font-size: 24px;
+            color: #1e1b4b;
+        }
+        .login-header p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #374151;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-btn:hover {
+            background: #4338ca;
+        }
+        .demo-credentials {
+            margin-top: 25px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e1;
+            font-size: 13px;
+        }
+        .demo-credentials h4 {
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .demo-pills {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .demo-pill {
+            padding: 6px 12px;
+            background: #e0e7ff;
+            color: #4338ca;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            border: none;
+        }
+        .demo-pill:hover {
+            background: #c7d2fe;
+        }
+        .error-banner {
+            display: none;
+            padding: 12px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <h2>ATS Portal</h2>
+            <p>Academic Progress & Achievement Tracking System</p>
+        </div>
+
+        <div id="dbNoticeBanner" style="display: none; padding: 10px 14px; background: #eff6ff; color: #1e40af; border-radius: 8px; font-size: 13px; margin-bottom: 16px; border: 1px solid #bfdbfe;">
+            <i class="fa-solid fa-circle-info"></i> <strong>Offline Demo Mode:</strong> Aiven Cloud MySQL is unconfigured in <code>.env</code>. Use the Quick Demo Sign-In pills below to explore all features.
+        </div>
+        <div id="errorBanner" class="error-banner"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username or College Email</label>
+                <input type="text" id="username" placeholder="e.g. ishita_sharma" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="login-btn" id="submitBtn">Sign In</button>
+        </form>
+
+        <div class="demo-credentials">
+            <h4>Quick Demo Sign-In:</h4>
+            <div class="demo-pills" style="flex-wrap: wrap;">
+                <button type="button" class="demo-pill" onclick="quickFill('ishita_sharma', 'Password123!')">
+                    <i class="fa-solid fa-user-graduate"></i> Student (Ishita)
+                </button>
+                <button type="button" class="demo-pill" onclick="quickFill('prof_ramesh', 'Password123!')">
+                    <i class="fa-solid fa-chalkboard-user"></i> Faculty
+                </button>
+                <button type="button" class="demo-pill" onclick="quickFill('admin_principal', 'AdminPassword123!')">
+                    <i class="fa-solid fa-shield-halved"></i> Admin
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function quickFill(user, pass) {
+            document.getElementById('username').value = user;
+            document.getElementById('password').value = pass;
+        }
+
+        async function checkDbStatus() {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                const banner = document.getElementById('dbNoticeBanner');
+                if (data.database && data.database.status !== 'connected' && banner) {
+                    banner.style.display = 'block';
+                }
+            } catch (e) {
+                // Backend not responding
+            }
+        }
+        checkDbStatus();
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorBanner = document.getElementById('errorBanner');
+            const submitBtn = document.getElementById('submitBtn');
+            errorBanner.style.display = 'none';
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Authenticating...';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    const userObj = { ...data.user, isOfflineDemo: !!data.isOfflineDemo };
+                    localStorage.setItem('ats_token', data.token);
+                    localStorage.setItem('ats_user', JSON.stringify(userObj));
+                    window.location.href = '/index.html';
+                } else {
+                    errorBanner.innerText = data.message || 'Login failed. Please verify credentials.';
+                    errorBanner.style.display = 'block';
+                }
+            } catch (err) {
+                errorBanner.innerText = 'Unable to reach backend server. Please verify application is running.';
+                errorBanner.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Sign In';
+            }
+        });
+    </script>
+</body>
+</html>

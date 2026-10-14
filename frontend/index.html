@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS - Academic Tracking System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for Interactive Visual Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div>
+            <div class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <h2>ATS</h2>
+            </div>
+
+            <ul id="sidebarNav">
+                <li class="active" onclick="switchView('dashboard')">
+                    <i class="fa-solid fa-house"></i>
+                    Dashboard
+                </li>
+                <li onclick="switchView('profile')">
+                    <i class="fa-solid fa-user-graduate"></i>
+                    Student
+                </li>
+                <li onclick="switchView('subjects')">
+                    <i class="fa-solid fa-book"></i>
+                    Subjects
+                </li>
+                <li onclick="switchView('reports')">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Reports
+                </li>
+                <li onclick="switchView('ai')">
+                    <i class="fa-solid fa-robot"></i>
+                    AI Analysis
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <p>ATS Cloud Platform</p>
+            <p>Aiven MySQL Connected</p>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Navbar -->
+        <header class="navbar">
+            <div class="search">
+                <input type="text" id="searchInput" placeholder="Search subjects, scores, or advice...">
+            </div>
+
+            <div class="profile">
+                <i class="fa-solid fa-bell bell-icon" title="Notifications"></i>
+                <img id="navProfileImg" src="https://i.pravatar.cc/150?u=ishita" alt="Avatar">
+                <div class="profile-info">
+                    <h4 id="navProfileName">Loading...</h4>
+                    <p id="navProfileRole">Student</p>
+                </div>
+                <button class="logout-btn" onclick="logout()" title="Sign Out">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Global Offline Demo Mode Indicator Banner -->
+        <div id="demoModeBanner" style="display: none; margin-top: 20px; padding: 12px 18px; background: #eff6ff; color: #1e40af; border-radius: 14px; font-size: 13px; border: 1px solid #bfdbfe; display: none; align-items: center; justify-content: space-between;">
+            <div>
+                <i class="fa-solid fa-circle-info" style="margin-right: 8px;"></i>
+                <strong>Offline Demo Mode Active:</strong> Aiven Cloud MySQL is unconfigured in <code>.env</code>. You are viewing local college demonstration data. To switch to persistent cloud storage, add your Aiven credentials to <code>.env</code>.
+            </div>
+            <button onclick="document.getElementById('demoModeBanner').style.display='none'" style="background:none; border:none; color:#1e40af; cursor:pointer; font-size:16px;">&times;</button>
+        </div>
+
+        <!-- VIEW 1: MAIN DASHBOARD -->
+        <div id="viewDashboard" class="view-panel active">
+            <!-- Welcome -->
+            <section class="welcome">
+                <h1 id="welcomeGreeting">Hello Student 👋</h1>
+                <p id="welcomeSub">Welcome to Academic Tracking System</p>
+            </section>
+
+            <!-- Cards -->
+            <section class="cards">
+                <div class="card">
+                    <h3>Cumulative GPA</h3>
+                    <h1 id="cardGpa">--</h1>
+                    <div class="card-subtitle"><i class="fa-solid fa-arrow-trend-up"></i> Credit-Weighted</div>
+                </div>
+
+                <div class="card">
+                    <h3>Overall Attendance</h3>
+                    <h1 id="cardAttendance">--%</h1>
+                    <div class="card-subtitle" id="cardAttendanceSub"><i class="fa-solid fa-check"></i> Eligible for exams</div>
+                </div>
+
+                <div class="card">
+                    <h3>Registered Subjects</h3>
+                    <h1 id="cardSubjects">--</h1>
+                    <div class="card-subtitle"><i class="fa-solid fa-book-open"></i> Semester 4</div>
+                </div>
+
+                <div class="card">
+                    <h3>Achievements</h3>
+                    <h1 id="cardAchievements">--</h1>
+                    <div class="card-subtitle"><i class="fa-solid fa-medal"></i> Verified Honors</div>
+                </div>
+            </section>
+
+            <!-- Charts -->
+            <section class="charts">
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h3>Academic Performance (Marks / 100)</h3>
+                        <span class="badge" id="gpaBadge">GPA: --</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="marksChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h3>Attendance Health</h3>
+                        <span class="badge badge-success" id="attEligibilityBadge">Loading</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom -->
+            <section class="bottom">
+                <div class="analysis" id="aiBox">
+                    <div class="section-title">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>AI Study & Performance Insights</span>
+                    </div>
+                    <div id="aiRecommendationsList">
+                        <p style="color: #6b7280; font-size: 13px;">Analyzing academic records...</p>
+                    </div>
+                </div>
+
+                <div class="events" id="eventsBox">
+                    <div class="section-title">
+                        <i class="fa-solid fa-trophy"></i>
+                        <span>Recent Achievements</span>
+                    </div>
+                    <div id="achievementsList">
+                        <p style="color: #6b7280; font-size: 13px;">Retrieving honors...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW 2: SUBJECTS & MARKS DETAIL -->
+        <div id="viewSubjects" class="view-panel">
+            <section class="welcome">
+                <h1>Coursework & Academic Performance</h1>
+                <p>Complete breakdown of semester courses, credits, evaluation, and attendance.</p>
+            </section>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Subject Name</th>
+                        <th>Credits</th>
+                        <th>Marks Obtained</th>
+                        <th>Grade</th>
+                        <th>Grade Points</th>
+                        <th>Attendance</th>
+                    </tr>
+                </thead>
+                <tbody id="subjectsTableBody">
+                    <tr><td colspan="7">Loading subjects...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- VIEW 3: STUDENT PROFILE -->
+        <div id="viewProfile" class="view-panel">
+            <section class="welcome">
+                <h1>Student Profile</h1>
+                <p>Academic records and personal enrollment details.</p>
+            </section>
+
+            <div style="background: white; border-radius: 20px; padding: 30px; margin-top: 25px; max-width: 700px; box-shadow: 0 10px 20px rgba(0,0,0,0.03);">
+                <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 25px;">
+                    <img id="profileDetailImg" src="https://i.pravatar.cc/150" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #4f46e5;">
+                    <div>
+                        <h2 id="profileDetailName">Student Name</h2>
+                        <p id="profileDetailReg" style="color: #6b7280; font-weight: 500;">Register No: --</p>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
+                    <div><strong>Department:</strong> <span id="profileDetailDept">--</span></div>
+                    <div><strong>Semester:</strong> <span id="profileDetailSem">--</span></div>
+                    <div><strong>Section:</strong> <span id="profileDetailSec">--</span></div>
+                    <div><strong>Email:</strong> <span id="profileDetailEmail">--</span></div>
+                    <div><strong>CGPA:</strong> <span id="profileDetailCgpa">--</span></div>
+                    <div><strong>Overall Attendance:</strong> <span id="profileDetailAtt">--%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 4: AI ANALYSIS DETAILED -->
+        <div id="viewAI" class="view-panel">
+            <section class="welcome">
+                <h1>AI Academic Intelligence & Prognostics</h1>
+                <p>Comprehensive subject mastery analysis and tailored academic intervention plans.</p>
+            </section>
+
+            <div style="margin-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.03);">
+                    <h3 style="margin-bottom: 15px; color: #16a34a;"><i class="fa-solid fa-circle-check"></i> Academic Strengths</h3>
+                    <ul id="aiStrengthsList" style="list-style: none; font-size: 13px; line-height: 2;">
+                        <li>Analyzing...</li>
+                    </ul>
+                </div>
+                <div style="background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.03);">
+                    <h3 style="margin-bottom: 15px; color: #dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> Focus & Intervention Areas</h3>
+                    <ul id="aiWeaknessesList" style="list-style: none; font-size: 13px; line-height: 2;">
+                        <li>Analyzing...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 5: ADMIN INSTITUTIONAL OVERVIEW & AT-RISK REGISTRY -->
+        <div id="viewAdmin" class="view-panel">
+            <section class="welcome">
+                <h1>Institutional Administration Portal</h1>
+                <p>Campus-wide performance summaries, departmental metrics, and early academic intervention alerts.</p>
+            </section>
+
+            <section class="cards" style="margin-top: 25px;">
+                <div class="card">
+                    <h3>Total Enrolled Students</h3>
+                    <h1 id="adminTotalStudents">--</h1>
+                    <div class="card-subtitle"><i class="fa-solid fa-users"></i> Across all departments</div>
+                </div>
+                <div class="card">
+                    <h3>Academic Departments</h3>
+                    <h1 id="adminTotalDepts">--</h1>
+                    <div class="card-subtitle"><i class="fa-solid fa-building-columns"></i> Engineering</div>
+                </div>
+                <div class="card">
+                    <h3>Institutional Average CGPA</h3>
+                    <h1 id="adminAvgGpa">--</h1>
+                    <div class="card-subtitle"><i class="fa-solid fa-chart-line"></i> Credit-weighted</div>
+                </div>
+                <div class="card">
+                    <h3>At-Risk Students</h3>
+                    <h1 id="adminAtRiskCount" style="color: #dc2626;">--</h1>
+                    <div class="card-subtitle" style="color: #dc2626;"><i class="fa-solid fa-triangle-exclamation"></i> Requiring Support</div>
+                </div>
+            </section>
+
+            <div style="margin-top: 30px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; color: #1f2937;"><i class="fa-solid fa-bell" style="color: #ef4444;"></i> At-Risk Students Registry (Attendance < 75% or GPA < 6.0)</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Reg No</th>
+                            <th>Student Name</th>
+                            <th>Dept</th>
+                            <th>Semester</th>
+                            <th>Overall Attendance</th>
+                            <th>CGPA</th>
+                            <th>Primary Risk Factor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminAtRiskTableBody">
+                        <tr><td colspan="7">Loading at-risk records...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW 6: FACULTY PORTAL & CLASS ROSTERS -->
+        <div id="viewFaculty" class="view-panel">
+            <section class="welcome">
+                <h1>Faculty Academic Portal</h1>
+                <p>Assigned course management, student evaluation rosters, and attendance verification.</p>
+            </section>
+
+            <div style="margin-top: 25px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; color: #1f2937;"><i class="fa-solid fa-chalkboard-user" style="color: #4f46e5;"></i> Assigned Subjects & Enrollment</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Subject Name</th>
+                            <th>Department</th>
+                            <th>Semester</th>
+                            <th>Credits</th>
+                            <th>Enrolled Students</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facultySubjectsTableBody">
+                        <tr><td colspan="6">Loading assigned subjects...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="font-size: 16px; margin-bottom: 12px; color: #1f2937;"><i class="fa-solid fa-user-check" style="color: #10b981;"></i> Student Roster & Evaluation Summary</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Reg No</th>
+                            <th>Name</th>
+                            <th>Dept</th>
+                            <th>Semester</th>
+                            <th>Attendance %</th>
+                            <th>Current GPA</th>
+                            <th>Academic Standing</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facultyRosterTableBody">
+                        <tr><td colspan="7">Loading student roster...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+</div>
+
+<!-- Floating AI Chat Assistant -->
+<button class="chat-widget-btn" id="chatToggleBtn" onclick="toggleChat()">
+    <i class="fa-solid fa-robot"></i>
+    <span>Academic AI Chat</span>
+</button>
+
+<div class="chat-modal" id="chatModal">
+    <div class="chat-modal-header">
+        <h4><i class="fa-solid fa-graduation-cap"></i> ATS Academic Assistant</h4>
+        <button class="chat-close-btn" onclick="toggleChat()">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <div class="chat-bubble chat-bubble-bot">
+            Hello! I am your ATS Academic Assistant. Ask me about your GPA, marks in any subject, attendance eligibility, or study advice!
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Ask about GPA, attendance, subjects..." onkeypress="handleChatEnter(event)">
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendChat()">
+            <i class="fa-solid fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "smart-campus-hierarchy",
+  "version": "1.0.0",
+  "description": "Smart Campus Hierarchy & Student Management System",
+  "scripts": {
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "db:push": "npm run prisma:db-push --prefix server",
+    "db:seed": "npm run seed --prefix server",
+    "test": "npm test --prefix server",
+    "build": "npm run build --prefix server && npm run build --prefix client"
+  },
+  "keywords": [
+    "campus",
+    "hierarchy",
+    "education",
+    "student-management",
+    "prisma",
+    "react",
+    "typescript"
+  ],
+  "author": "Smart Campus Engineering Team",
+  "license": "ISC"
+}
