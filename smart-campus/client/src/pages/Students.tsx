@@ -95,10 +95,11 @@ export const Students: React.FC = () => {
   };
 
   const handleExportCsv = () => {
-    const q = new URLSearchParams();
-    if (selectedDeptId !== 'ALL') q.append('departmentId', String(selectedDeptId));
-    if (assignmentFilter !== 'ALL') q.append('assignmentStatus', assignmentFilter);
-    window.open(`/api/students/export/csv?${q.toString()}`, '_blank');
+    const url = api.getExportCsvUrl({
+      departmentId: selectedDeptId !== 'ALL' ? Number(selectedDeptId) : undefined,
+      assignmentStatus: assignmentFilter !== 'ALL' ? assignmentFilter : undefined,
+    });
+    window.open(url, '_blank');
   };
 
   const handleImportSubmit = async (e: React.FormEvent) => {

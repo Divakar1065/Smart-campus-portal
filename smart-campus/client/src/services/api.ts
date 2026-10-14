@@ -1,4 +1,17 @@
-const API_BASE = '/api';
+// Detect API base URL:
+// In production on Vercel/Netlify, set VITE_API_URL (e.g. 'https://smart-campus-api.onrender.com')
+// In local development, falls back to '/api' which Vite proxies to http://localhost:5000
+const rawBase: string | undefined = import.meta.env.VITE_API_URL?.trim();
+
+export function getApiBaseUrl(): string {
+  if (!rawBase) {
+    return '/api';
+  }
+  const clean = rawBase.replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+}
+
+export const API_BASE = getApiBaseUrl();
 
 export class ApiError extends Error {
   status: number;
@@ -37,17 +50,40 @@ export async function request<T = any>(endpoint: string, options: RequestInit = 
     }
   }
 
-  const contentType = response.headers.get('content-type');
+  const contentType = response.headers.get('content-type') || '';
   let data: any;
-  if (contentType && contentType.includes('application/json')) {
-    data = await response.json();
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
   } else {
-    data = await response.text();
+    const textData = await response.text();
+    // Gracefully handle HTML responses (such as Vercel static 404 or hosting gateway errors)
+    if (textData.trim().startsWith('<!DOCTYPE') || textData.trim().startsWith('<html') || textData.includes('<title>404')) {
+      data = {
+        success: false,
+        message:
+          response.status === 404
+            ? 'API route not found (404). If deployed on Vercel, ensure VITE_API_URL is configured with your live backend server URL.'
+            : `Backend returned HTML error (HTTP ${response.status}). The server may still be starting up. Please try again shortly.`,
+      };
+    } else {
+      data = { success: false, message: textData || `HTTP ${response.status} ${response.statusText}` };
+    }
   }
 
   if (!response.ok) {
-    const errorMsg = data?.message || (typeof data === 'string' ? data : 'API Request failed');
+    const errorMsg =
+      data?.message ||
+      (typeof data === 'string' ? data : `Request failed with status ${response.status}`);
     throw new ApiError(errorMsg, response.status, data);
+  }
+
+  if (data && typeof data === 'object' && data.success === false) {
+    throw new ApiError(data.message || 'Operation failed', response.status, data);
   }
 
   return data;
@@ -108,6 +144,12 @@ export const api = {
   deleteStudent: (id: number) => request(`/students/${id}`, { method: 'DELETE' }),
   importStudentsCsv: (csvData: string) =>
     request('/students/import/csv', { method: 'POST', body: JSON.stringify({ csvData }) }),
+  getExportCsvUrl: (params?: { departmentId?: number; assignmentStatus?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.departmentId) q.append('departmentId', String(params.departmentId));
+    if (params?.assignmentStatus) q.append('assignmentStatus', params.assignmentStatus);
+    return `${API_BASE}/students/export/csv?${q.toString()}`;
+  },
 
   // Allocation
   allocateSingle: (studentId: number, facultyId: number | null) =>

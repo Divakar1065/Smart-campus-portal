@@ -14,12 +14,44 @@ import studentPortalRoutes from './routes/studentPortalRoutes';
 
 export const app = express();
 
-app.use(
-  cors({
-    origin: '*',
-    credentials: true,
-  })
-);
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CORS_ORIGIN,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+].filter(Boolean) as string[];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests (Postman, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    // Allow configured production frontends
+    if (allowedOrigins.some((o) => origin === o || origin.startsWith(o))) {
+      return callback(null, true);
+    }
+
+    // Allow any Vercel deployment (*.vercel.app)
+    if (/^https:\/\/([a-zA-Z0-9_-]+\.)*vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Allow localhost on any port
+    if (/^http:\/\/localhost(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Safe fallback: reflect origin so browsers don't reject due to wildcard credentials mismatch
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

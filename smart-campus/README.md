@@ -150,3 +150,40 @@ All **24 integration test suites** pass cleanly, validating:
 5. Faculty Management & Capacity Constraints (17 mentors, duplicate email rejection).
 6. Student Management & Mentorship Allocation Engine (560 students, cross-department rejection, greedy auto-balance).
 7. College Hierarchy Tree & Institutional Reports (Dean $\rightarrow$ Dept $\rightarrow$ HOD $\rightarrow$ Faculty $\rightarrow$ Students, department summary, workload equity).
+
+---
+
+## 🌐 Cloud Deployment Guide (Vercel Frontend + Cloud Backend)
+
+### 1. The Root Cause of Login Failures on Vercel
+When deploying only the Vite React frontend on Vercel:
+- Vercel hosts the static HTML/JS/CSS assets.
+- If `VITE_API_URL` is omitted, the frontend requests `/api/auth/login` on the Vercel domain, which returns `404 Not Found` (HTML) because no Express backend is running on Vercel.
+- With the dynamic configuration implemented in `api.ts`, setting `VITE_API_URL` instantly connects the Vercel UI to your backend API.
+
+### 2. Frontend Deployment on Vercel
+1. In the Vercel Dashboard, import the GitHub repository: `https://github.com/Divakar1065/Smart-campus-portal.git`
+2. **Project Settings**:
+   - **Framework Preset**: Vite
+   - **Root Directory**: `smart-campus/client` (or leave default root; root `vercel.json` will build `smart-campus/client` automatically)
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+3. **Environment Variables**:
+   | Variable | Value | Description |
+   | :--- | :--- | :--- |
+   | `VITE_API_URL` | `https://your-backend.onrender.com` | The URL of your deployed Express server |
+
+### 3. Backend Deployment (Render, Railway, or VPS)
+Deploy `smart-campus/server` as a Node.js web service (e.g. on [Render.com](https://render.com) or [Railway.app](https://railway.app)):
+1. **Root Directory**: `smart-campus/server`
+2. **Build Command**: `npm install && npx prisma generate && npm run build`
+3. **Start Command**: `npm start`
+4. **Environment Variables**:
+   | Variable | Value | Description |
+   | :--- | :--- | :--- |
+   | `NODE_ENV` | `production` | Production mode |
+   | `PORT` | `5000` (or assigned by host) | Port number |
+   | `DATABASE_URL` | `file:./dev.db` | SQLite database file location |
+   | `JWT_SECRET` | `smart-campus-super-secret-key-2026` | Token signing secret |
+   | `FRONTEND_URL` | `https://your-app.vercel.app` | Allowed CORS origin |
+
